@@ -1,0 +1,109 @@
+body {
+    /* Similar dark background color from the image */
+    background-color: #0d122b; 
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    margin: 0;
+    color: white; 
+}
+
+.header {
+    width: 100%;
+    text-align: center;
+    position: absolute;
+    top: 10vh; 
+}
+
+.logo {
+    /* ImpactEcho Symbol/Name (Size remains large as requested previously) */
+    font-size: 48px; 
+    font-weight: bold;
+    letter-spacing: 2px;
+    color: white; 
+    display: inline-block;
+    padding-bottom: 5px;
+    border-bottom: 3px solid #3f51b5; 
+}
+
+.form-container {
+    background-color: white;
+    /* INCREASED WIDTH */
+    width: 480px; 
+    /* INCREASED PADDING */
+    padding: 55px; 
+    border-radius: 12px; /* Slight increase in border radius for a softer look */
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5); /* Slightly darker shadow */
+    text-align: center;
+    color: #333; 
+    margin-top: 180px; 
+    margin-bottom: 50px;
+}
+
+h2 {
+    /* INCREASED HEADING SIZE */
+    font-size: 36px; 
+    font-weight: 600;
+    margin-bottom: 10px;
+}
+
+.subtitle {
+    margin-top: 0;
+    margin-bottom: 35px; /* Increased margin for better separation */
+    /* INCREASED SUBTITLE SIZE */
+    font-size: 16px; 
+    color: #555;
+}
+
+.form-group {
+    text-align: left;
+    margin-bottom: 25px; /* Increased space between input fields */
+}
+
+label {
+    display: block;
+    margin-bottom: 10px;
+    /* INCREASED LABEL SIZE */
+    font-size: 16px; 
+    font-weight: 500;
+}
+
+input[type="text"] {
+    width: 100%;
+    /* INCREASED INPUT PADDING */
+    padding: 15px; 
+    border: 1px solid #ccc; /* Slightly lighter border */
+    border-radius: 6px; 
+    box-sizing: border-box; 
+    /* INCREASED INPUT TEXT SIZE */
+    font-size: 18px; 
+    transition: border-color 0.3s;
+}
+
+input:focus {
+    border-color: #007bff;
+    outline: none;
+}
+
+.submit-button {
+    background-color: #3f51b5;
+    color: white;
+    /* INCREASED BUTTON PADDING */
+    padding: 15px 25px; 
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    width: 100%;
+    /* INCREASED BUTTON TEXT SIZE */
+    font-size: 18px; 
+    font-weight: 600;
+    margin-top: 20px; /* Increased top margin */
+    transition: background-color 0.3s;
+}
+
+.submit-button:hover {
+    background-color: #303f9f;
+}
