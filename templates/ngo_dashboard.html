@@ -1,0 +1,597 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ImpactEcho — NGO Dashboard</title>
+<link rel="stylesheet" href="/static/style2.css"/>
+<style>
+.status-badge{display:inline-block;padding:6px 12px;border-radius:8px;font-size:12px;font-weight:700;text-transform:uppercase;}
+.status-pending{background:rgba(251,191,36,0.2);color:#fbbf24;border:1px solid #fbbf24;}
+.status-approved{background:rgba(34,197,94,0.2);color:#22c55e;border:1px solid #22c55e;}
+.status-signed{background:rgba(34,197,94,0.2);color:#22c55e;border:1px solid #22c55e;}
+.status-pending_signature{background:rgba(251,191,36,0.2);color:#fbbf24;border:1px solid #fbbf24;}
+.request-card{background:rgba(10,14,39,0.6);border:2px solid rgba(139,92,246,0.2);border-radius:16px;padding:24px;margin-bottom:20px;}
+.request-card h3{margin-bottom:12px;}
+.donation-item{display:flex;justify-content:space-between;align-items:center;padding:12px;background:rgba(255,255,255,0.03);border-radius:8px;margin-bottom:8px;}
+.notif-unread{border-left:4px solid #ff006e;}
+.notif-read{opacity:0.6;}
+.ai-verdict{font-weight:700;padding:4px 12px;border-radius:6px;display:inline-block;}
+.ai-genuine{background:rgba(34,197,94,0.2);color:#22c55e;}
+.ai-suspicious{background:rgba(239,68,68,0.2);color:#ef4444;}
+
+/* Tab Buttons Styling */
+.tabs {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 32px;
+  flex-wrap: wrap;
+}
+
+.tab-btn {
+  background: rgba(139,92,246,0.1);
+  border: 2px solid rgba(139,92,246,0.3);
+  color: #8b5cf6;
+  padding: 12px 24px;
+  border-radius: 12px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  white-space: nowrap;
+}
+
+.tab-btn:hover {
+  background: rgba(139,92,246,0.2);
+  border-color: #8b5cf6;
+  transform: translateY(-2px);
+}
+
+.tab-btn.active {
+  background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);
+  border-color: #8b5cf6;
+  color: #ffffff;
+  box-shadow: 0 4px 12px rgba(139,92,246,0.3);
+}
+
+.tab-content {
+  display: none;
+}
+
+.tab-content.active {
+  display: block;
+  animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+</style>
+</head>
+<body>
+<header class="topbar">
+<div class="brand"><img src="/static/logo.png" alt="ImpactEcho" class="logo-img" style="width:50px;height:50px;object-fit:contain;margin-right:12px;"><span class="brand-name">ImpactEcho NGO</span></div>
+<nav class="nav-right">
+<span id="ngoName" style="color:#cbd5e1;margin-right:16px;"></span>
+<span id="notificationBadge" style="background:#ff006e;color:#fff;border-radius:50%;width:24px;height:24px;display:inline-flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;margin-right:16px;cursor:pointer;" onclick="switchTab('notifications')">0</span>
+<button onclick="window.location.href='/ngo-logout'" class="btn-link">Logout</button>
+</nav>
+</header>
+<main class="container">
+<section class="card" style="max-width:100%;margin:30px auto;">
+<h2 style="margin-bottom:32px;">NGO Dashboard</h2>
+
+<!-- Tabs -->
+<div class="tabs">
+<button class="tab-btn active" onclick="switchTab('causes')">My Causes</button>
+<button class="tab-btn" onclick="switchTab('donations')">Donations</button>
+<button class="tab-btn" onclick="switchTab('notifications')">Notifications</button>
+<button class="tab-btn" onclick="switchTab('contracts')">Contracts</button>
+<button class="tab-btn" onclick="switchTab('verification')">Payment Requests</button>
+</div>
+
+<!-- My Causes Tab -->
+<div class="tab-content active" id="causes-tab">
+<h3 style="margin-bottom:16px;">Submit New Cause Request</h3>
+<form id="causeRequestForm">
+<label>Cause Title</label>
+<input type="text" id="title" class="input" required/>
+<label>Description</label>
+<textarea id="description" class="input" required></textarea>
+<label>Goal Amount (₹)</label>
+<input type="number" id="goal" class="input" required/>
+<label>Image URL</label>
+<input type="text" id="image" class="input" required/>
+<button type="submit" class="fund-btn" style="margin-top:15px;">Submit Request</button>
+</form>
+<p id="message" class="muted small" style="margin-top:10px;"></p>
+
+<h3 style="margin-top:40px;margin-bottom:16px;">My Cause Requests</h3>
+<div id="requestsList"></div>
+</div>
+
+<!-- Donations Tab -->
+<div class="tab-content" id="donations-tab">
+<h3 style="margin-bottom:24px;">📊 Donations Received</h3>
+<div id="donationsList"></div>
+</div>
+
+<!-- Notifications Tab -->
+<div class="tab-content" id="notifications-tab">
+<h3 style="margin-bottom:24px;">🔔 Notifications</h3>
+<div id="notificationsList"></div>
+</div>
+
+<!-- Contracts Tab -->
+<div class="tab-content" id="contracts-tab">
+<h3 style="margin-bottom:24px;">📄 Partnership Contracts</h3>
+<div id="contractsList"></div>
+</div>
+
+<!-- Payment Verification Tab -->
+<div class="tab-content" id="verification-tab">
+<h3 style="margin-bottom:16px;">💰 Submit Payment Request</h3>
+<p class="muted" style="margin-bottom:24px;">Upload bills and receipts for AI verification before payment release.</p>
+<form id="billSubmitForm">
+<label>Select Cause</label>
+<select id="billCauseId" class="input" required>
+<option value="">-- Select a cause --</option>
+</select>
+<label>Amount Requested (₹)</label>
+<input type="number" id="billAmount" class="input" required/>
+<label>Upload Bills/Receipts (Multiple files allowed)</label>
+<input type="file" id="billFiles" class="input" multiple accept="image/*,.pdf" required/>
+<button type="submit" class="fund-btn" style="margin-top:15px;">Submit for Verification</button>
+</form>
+<p id="billMessage" class="muted small" style="margin-top:10px;"></p>
+
+<h3 style="margin-top:40px;margin-bottom:16px;">My Payment Requests</h3>
+<div id="verificationList"></div>
+</div>
+
+</section>
+</main>
+<script>
+let currentTab = 'causes';
+
+function switchTab(tabName) {
+  currentTab = tabName;
+  document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+  document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+  document.querySelector(`.tab-btn:nth-child(${['causes','donations','notifications','contracts','verification'].indexOf(tabName) + 1})`).classList.add('active');
+  document.getElementById(`${tabName}-tab`).classList.add('active');
+  
+  // Load data for tab
+  if(tabName === 'donations') loadDonations();
+  if(tabName === 'notifications') loadNotifications();
+  if(tabName === 'contracts') loadContracts();
+  if(tabName === 'verification') loadVerificationRequests();
+}
+
+async function loadRequests(){
+  const res=await fetch('/ngo-my-requests');
+  const requests=await res.json();
+  const list=document.getElementById('requestsList');
+  if(requests.length===0){
+    list.innerHTML='<p class="muted">No requests yet. Submit your first cause above!</p>';
+    return;
+  }
+  
+  list.innerHTML=requests.map(r=>`
+    <div class="request-card">
+      <div style="display:flex;justify-content:space-between;align-items:start;">
+        <div style="flex:1;">
+          <h3>${r.title}</h3>
+          <p class="muted">${r.description}</p>
+          <p style="margin-top:12px;"><strong>Goal:</strong> ₹${r.goal.toLocaleString()}</p>
+          <p style="margin-top:8px;"><strong>Status:</strong> <span class="status-badge status-${r.status}">${r.status}</span></p>
+          <p class="muted small" style="margin-top:8px;">Submitted: ${new Date(r.submitted_at).toLocaleString()}</p>
+          ${r.approved_at?`<p class="muted small" style="color:#00ff87;">✓ Approved: ${new Date(r.approved_at).toLocaleString()}</p>`:''}
+        </div>
+        ${r.status === 'approved' ? `
+          <button onclick="requestDeletion(${r.id}, '${r.title}')" class="btn-link" style="color:#ff006e;">Delete Cause</button>
+        ` : ''}
+      </div>
+    </div>
+  `).join('');
+  
+  // Populate cause dropdown for bills
+  const approvedCauses = requests.filter(r => r.status === 'approved');
+  const dropdown = document.getElementById('billCauseId');
+  dropdown.innerHTML = '<option value="">-- Select a cause --</option>' + 
+    approvedCauses.map(c => `<option value="${c.id}">${c.title}</option>`).join('');
+}
+
+async function requestDeletion(causeId, causeTitle) {
+  const reason = prompt(`Why do you want to delete "${causeTitle}"?`);
+  if(!reason) return;
+  
+  try {
+    const res = await fetch('/ngo-request-delete-cause', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({cause_id: causeId, reason: reason})
+    });
+    const data = await res.json();
+    alert(data.message || 'Deletion request submitted!');
+  } catch(err) {
+    alert('Error submitting request');
+  }
+}
+
+async function loadDonations() {
+  const res = await fetch('/ngo-view-donations');
+  const donations = await res.json();
+  const list = document.getElementById('donationsList');
+  
+  const causeIds = Object.keys(donations);
+  if(causeIds.length === 0) {
+    list.innerHTML = '<p class="muted">No donations received yet.</p>';
+    return;
+  }
+  
+  list.innerHTML = causeIds.map(causeId => {
+    const d = donations[causeId];
+    return `
+      <div class="request-card">
+        <h3>${d.cause_title}</h3>
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:16px;margin:16px 0;">
+          <div>
+            <p class="muted small">Total Raised</p>
+            <p style="font-size:24px;font-weight:700;color:#00ff87;">₹${d.cause_raised.toLocaleString()}</p>
+          </div>
+          <div>
+            <p class="muted small">Goal</p>
+            <p style="font-size:24px;font-weight:700;">₹${d.cause_goal.toLocaleString()}</p>
+          </div>
+          <div>
+            <p class="muted small">Total Donors</p>
+            <p style="font-size:24px;font-weight:700;color:#8b5cf6;">${d.total_donors}</p>
+          </div>
+          <div>
+            <p class="muted small">Donations Count</p>
+            <p style="font-size:24px;font-weight:700;color:#ff006e;">${d.donation_count}</p>
+          </div>
+        </div>
+        
+        <details style="margin-top:16px;">
+          <summary style="cursor:pointer;color:#8b5cf6;font-weight:600;">View All Donations</summary>
+          <div style="margin-top:16px;max-height:300px;overflow-y:auto;">
+            ${d.donations.length === 0 ? '<p class="muted">No donations yet</p>' : 
+              d.donations.map(donation => `
+                <div class="donation-item">
+                  <div>
+                    <p style="font-size:13px;color:#94a3b8;">${donation.wallet_address.slice(0,10)}...${donation.wallet_address.slice(-8)}</p>
+                    <p class="muted small">${new Date(donation.timestamp).toLocaleString()}</p>
+                  </div>
+                  <p style="font-weight:700;color:#00ff87;">₹${donation.amount.toLocaleString()}</p>
+                </div>
+              `).join('')
+            }
+          </div>
+        </details>
+      </div>
+    `;
+  }).join('');
+}
+
+async function loadNotifications() {
+  const res = await fetch('/ngo-notifications');
+  const notifications = await res.json();
+  const list = document.getElementById('notificationsList');
+  
+  if(notifications.length === 0) {
+    list.innerHTML = '<p class="muted">No notifications yet.</p>';
+    return;
+  }
+  
+  // Update badge
+  const unreadCount = notifications.filter(n => !n.read).length;
+  document.getElementById('notificationBadge').textContent = unreadCount;
+  document.getElementById('notificationBadge').style.display = unreadCount > 0 ? 'inline-flex' : 'none';
+  
+  list.innerHTML = notifications.sort((a,b) => new Date(b.timestamp) - new Date(a.timestamp)).map(n => `
+    <div class="request-card ${n.read ? 'notif-read' : 'notif-unread'}" onclick="markAsRead(${n.id})">
+      <div style="display:flex;justify-content:space-between;align-items:start;">
+        <div>
+          <p style="font-size:16px;margin-bottom:8px;">${n.message}</p>
+          <p class="muted small">${new Date(n.timestamp).toLocaleString()}</p>
+        </div>
+        ${!n.read ? '<span style="color:#ff006e;font-weight:700;">NEW</span>' : ''}
+      </div>
+    </div>
+  `).join('');
+}
+
+async function markAsRead(notifId) {
+  await fetch(`/ngo-mark-notification-read/${notifId}`, {method: 'POST'});
+  loadNotifications();
+}
+
+async function loadContracts() {
+  const list = document.getElementById('contractsList');
+  
+  console.log('🔄 Loading contracts...');
+  
+  try {
+    const res = await fetch('/api/ngo/contracts');
+    console.log('✅ Response received:', res.status);
+    const contracts = await res.json();
+    console.log('📄 Contracts data:', contracts);
+    
+    if (!contracts || contracts.length === 0) {
+      list.innerHTML = `
+        <div class="request-card" style="text-align:center;padding:40px;">
+          <div style="font-size:64px;margin-bottom:16px;">📄</div>
+          <h3>No Contracts Yet</h3>
+          <p class="muted">Your partnership contract will appear here once generated by the admin.</p>
+          <p class="muted small" style="margin-top:12px;">Check your notifications for contract updates.</p>
+        </div>
+      `;
+      return;
+    }
+    
+    list.innerHTML = contracts.map(contract => {
+      // Determine status color and text based on contract status
+      let statusColor, statusText, borderColor;
+      
+      if (contract.status === 'approved') {
+        statusColor = '#00ff87';
+        borderColor = '#00ff87';
+        statusText = '✅ APPROVED - Active Partnership';
+      } else if (contract.status === 'rejected') {
+        statusColor = '#ff006e';
+        borderColor = '#ff006e';
+        statusText = '❌ REJECTED';
+      } else if (contract.status === 'signed') {
+        statusColor = '#fbbf24';
+        borderColor = '#fbbf24';
+        statusText = '⏳ Under Admin Review';
+      } else if (contract.status === 'pending_signature') {
+        statusColor = '#8b5cf6';
+        borderColor = '#8b5cf6';
+        statusText = '📝 Awaiting Your Signature';
+      } else {
+        statusColor = '#8b5cf6';
+        borderColor = '#8b5cf6';
+        statusText = '📝 Pending';
+      }
+      
+      return `
+        <div class="request-card" style="border:3px solid ${borderColor};background:rgba(10,14,39,0.7);box-shadow:0 4px 12px rgba(${contract.status === 'approved' ? '0,255,135' : contract.status === 'rejected' ? '255,0,110' : '139,92,246'},0.2);">
+          <div style="display:flex;justify-content:space-between;align-items:start;margin-bottom:16px;">
+            <h3 style="margin:0;">📄 Partnership Agreement #${contract.id}</h3>
+            <span style="background:${statusColor};color:#000;padding:8px 16px;border-radius:20px;font-size:13px;font-weight:700;text-transform:uppercase;">
+              ${statusText}
+            </span>
+          </div>
+          
+          <div style="display:grid;gap:12px;margin-bottom:16px;">
+            <p><strong>Organization:</strong> ${contract.ngo_name}</p>
+            <p><strong>Generated:</strong> ${new Date(contract.generated_date).toLocaleString()}</p>
+            ${contract.signed_date ? `<p><strong>Signed:</strong> ${new Date(contract.signed_date).toLocaleString()}</p>` : ''}
+            ${contract.approved_date ? `<p style="color:#00ff87;"><strong>✅ Approved:</strong> ${new Date(contract.approved_date).toLocaleString()}</p>` : ''}
+            ${contract.rejected_date ? `<p style="color:#ff006e;"><strong>❌ Rejected:</strong> ${new Date(contract.rejected_date).toLocaleString()}</p>` : ''}
+          </div>
+          
+          ${contract.status === 'approved' ? `
+            <div style="background:rgba(0,255,135,0.1);border:2px solid #00ff87;border-radius:12px;padding:16px;margin-bottom:16px;">
+              <h4 style="color:#00ff87;margin:0 0 8px 0;">🎉 Partnership Active!</h4>
+              <p style="margin:0;line-height:1.6;">Your signed contract has been approved by ImpactEcho admin. You can now fully utilize the platform and submit cause requests.</p>
+            </div>
+          ` : ''}
+          
+          ${contract.status === 'rejected' && contract.rejection_reason ? `
+            <div style="background:rgba(255,0,110,0.1);border:2px solid #ff006e;border-radius:12px;padding:16px;margin-bottom:16px;">
+              <h4 style="color:#ff006e;margin:0 0 8px 0;">❌ Contract Rejected</h4>
+              <p style="margin:0 0 8px 0;"><strong>Reason:</strong></p>
+              <p style="margin:0;padding:12px;background:rgba(0,0,0,0.3);border-radius:8px;line-height:1.6;">${contract.rejection_reason}</p>
+              <p style="margin:12px 0 0 0;" class="muted small">Please contact admin for clarification or resubmit a new contract.</p>
+            </div>
+          ` : ''}
+          
+          ${contract.status === 'signed' ? `
+            <div style="background:rgba(251,191,36,0.1);border:2px solid #fbbf24;border-radius:12px;padding:16px;margin-bottom:16px;">
+              <h4 style="color:#fbbf24;margin:0 0 8px 0;">⏳ Under Review</h4>
+              <p style="margin:0;line-height:1.6;">Your signed contract has been submitted and is currently under admin review. You will be notified once it's processed.</p>
+            </div>
+          ` : ''}
+          
+          <!-- Download Contract -->
+          <div style="margin-bottom:16px;">
+            <a href="/uploads/${contract.filename}" download class="fund-btn" style="display:inline-block;text-decoration:none;background:linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);padding:10px 20px;margin-right:8px;">
+              📥 Download Contract
+            </a>
+          </div>
+          
+          ${contract.status === 'pending_signature' ? `
+            <!-- Upload Signed Contract -->
+            <div style="margin-top:16px;padding:16px;background:rgba(139,92,246,0.1);border:2px dashed #8b5cf6;border-radius:8px;">
+              <p style="margin-bottom:12px;font-weight:600;">📝 Upload Signed Contract (PDF Only):</p>
+              <form id="uploadContractForm_${contract.id}" style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+                <input type="file" id="contractFile_${contract.id}" accept=".pdf,application/pdf" required 
+                  style="flex:1;min-width:200px;padding:8px;border:1px solid #8b5cf6;border-radius:6px;background:rgba(0,0,0,0.3);color:#fff;">
+                <button type="submit" class="fund-btn" style="background:linear-gradient(135deg, #00ff87 0%, #22c55e 100%);padding:10px 20px;">
+                  ✅ Upload Signed PDF
+                </button>
+              </form>
+              <p class="muted small" style="margin-top:8px;">⚠️ Please download the PDF, sign it digitally or print & scan, then upload the signed PDF back</p>
+            </div>
+          ` : ''}
+          
+          ${contract.signed_filename ? `
+            <div style="margin-top:16px;padding:12px;background:rgba(0,255,135,0.1);border-radius:8px;">
+              <p style="color:#00ff87;"><strong>✓ Your Signed Contract:</strong> ${contract.signed_filename}</p>
+              <a href="/uploads/${contract.signed_filename}" download class="fund-btn" style="display:inline-block;text-decoration:none;background:rgba(0,255,135,0.2);color:#00ff87;padding:8px 16px;margin-top:8px;font-size:13px;">
+                📥 Download Your Signed Contract
+              </a>
+            </div>
+          ` : ''}
+        </div>
+      `;
+    }).join('');
+    
+    // Add event listeners for upload forms
+    contracts.forEach(contract => {
+      if (contract.status === 'pending_signature') {
+        const form = document.getElementById(`uploadContractForm_${contract.id}`);
+        if (form) {
+          form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            await uploadSignedContract(contract.id);
+          });
+        }
+      }
+    });
+    
+  } catch (err) {
+    console.error('❌ Error loading contracts:', err);
+    console.error('Error details:', err.message, err.stack);
+    list.innerHTML = `
+      <div class="request-card" style="background:rgba(255,0,110,0.1);border-color:#ff006e;">
+        <h3 style="color:#ff006e;">⚠️ Error Loading Contracts</h3>
+        <p style="color:#ff006e;margin:12px 0;">${err.message}</p>
+        <button onclick="loadContracts()" class="fund-btn" style="background:linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);">
+          🔄 Try Again
+        </button>
+      </div>
+    `;
+  }
+}
+
+async function uploadSignedContract(contractId) {
+  const fileInput = document.getElementById(`contractFile_${contractId}`);
+  const file = fileInput.files[0];
+  
+  if (!file) {
+    alert('Please select a file to upload');
+    return;
+  }
+  
+  // Validate PDF file
+  if (!file.name.toLowerCase().endsWith('.pdf')) {
+    alert('❌ Error: Only PDF files are accepted!\n\nPlease:\n1. Download the contract PDF\n2. Sign it digitally or print & scan\n3. Upload the signed PDF back');
+    return;
+  }
+  
+  const formData = new FormData();
+  formData.append('contract', file);
+  formData.append('contract_id', contractId);
+  
+  try {
+    const res = await fetch('/ngo-upload-signed-contract', {
+      method: 'POST',
+      body: formData
+    });
+    
+    const data = await res.json();
+    
+    if (data.success) {
+      alert('✅ Signed contract uploaded successfully!');
+      loadContracts(); // Reload contracts
+    } else {
+      alert('❌ Error: ' + (data.error || 'Upload failed'));
+    }
+  } catch (err) {
+    console.error('Upload error:', err);
+    alert('❌ Error uploading contract');
+  }
+}
+
+async function loadVerificationRequests() {
+  // Would need endpoint to get NGO's verification requests
+  const list = document.getElementById('verificationList');
+  list.innerHTML = `<p class="muted">Your submitted payment requests will appear here.</p>`;
+}
+
+document.getElementById('causeRequestForm').addEventListener('submit',async(e)=>{
+  e.preventDefault();
+  const message=document.getElementById('message');
+  const btn=e.target.querySelector('button');
+  btn.disabled=true;
+  btn.textContent='Submitting...';
+  try{
+    const res=await fetch('/ngo-cause-request',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({
+        title:document.getElementById('title').value,
+        description:document.getElementById('description').value,
+        goal:parseFloat(document.getElementById('goal').value),
+        image:document.getElementById('image').value
+      })
+    });
+    const data=await res.json();
+    message.textContent=data.message||'Request submitted successfully!';
+    message.style.color='#00ff87';
+    e.target.reset();
+    loadRequests();
+  }catch(err){
+    message.textContent='Error submitting request';
+    message.style.color='#ff006e';
+  }finally{
+    btn.disabled=false;
+    btn.textContent='Submit Request';
+  }
+});
+
+document.getElementById('billSubmitForm').addEventListener('submit', async(e) => {
+  e.preventDefault();
+  const message = document.getElementById('billMessage');
+  const btn = e.target.querySelector('button');
+  btn.disabled = true;
+  btn.textContent = '📤 Uploading bills...';
+  
+  const formData = new FormData();
+  formData.append('cause_id', document.getElementById('billCauseId').value);
+  formData.append('amount', document.getElementById('billAmount').value);
+  
+  const files = document.getElementById('billFiles').files;
+  for(let file of files) {
+    formData.append('bills', file);
+  }
+  
+  try {
+    const res = await fetch('/ngo-submit-bills', {
+      method: 'POST',
+      body: formData
+    });
+    const data = await res.json();
+    
+    if(data.success) {
+      // Don't show AI verdict to NGO - just confirmation
+      message.innerHTML = `
+        <div style="background:rgba(139,92,246,0.1);border:2px solid #8b5cf6;border-radius:12px;padding:16px;margin-top:12px;">
+          <strong style="color:#00ff87;font-size:16px;">✓ Bills Successfully Submitted!</strong><br><br>
+          <p style="color:#e2e8f0;margin:8px 0;">
+            📋 Your payment request has been submitted for verification.<br>
+            🤖 Our AI system is analyzing your bills.<br>
+            👨‍💼 Admin will review and respond within 24-48 hours.
+          </p>
+          <p style="color:#94a3b8;font-size:13px;margin-top:12px;">
+            <strong>Status:</strong> <span style="color:#fbbf24;">⏳ Under Review</span>
+          </p>
+        </div>
+      `;
+      e.target.reset();
+      loadVerificationRequests();
+    } else {
+      message.innerHTML = `<span style="color:#ff006e;">${data.error || 'Error submitting bills'}</span>`;
+    }
+  } catch(err) {
+    message.innerHTML = `<span style="color:#ff006e;">Error: ${err.message}</span>`;
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'Submit for Verification';
+  }
+});
+
+// Init
+loadRequests();
+loadNotifications();
+loadContracts();  // Also load contracts on page load
+console.log('📊 NGO Dashboard initialized');
+</script>
+</body>
+</html>

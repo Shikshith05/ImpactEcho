@@ -1,0 +1,23 @@
+# Python cache
+__pycache__/
+*.pyc
+
+# Environment / dependencies
+.env
+venv/
+
+# Runtime data (your JSON "database")
+*.json
+
+# If you want to keep some JSON templates, un-comment below:
+# !*.example.json
+
+# Logs
+*.log
+
+# Uploads
+uploads/
+
+# System files
+.DS_Store
+*.swp

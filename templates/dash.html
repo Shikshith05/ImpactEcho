@@ -1,0 +1,670 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>ImpactEcho — Dashboard</title>
+
+  <!-- Dashboard CSS -->
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+
+  <!-- Google Fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap" rel="stylesheet">
+
+  <!-- Chatbot CSS -->
+  <link rel="stylesheet" href="{{ url_for('static', filename='chatbot.css') }}">
+  
+  <!-- Ethers.js for Blockchain Integration -->
+  <script src="https://cdn.ethers.io/lib/ethers-5.7.2.umd.min.js"></script>
+  
+  <style>
+    /* Dashboard Entrance Animation */
+    #dashboard-entrance {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      background: radial-gradient(ellipse at top, #1a0b2e 0%, #0a0e27 100%);
+      z-index: 10000;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      animation: fadeOut 0.6s ease 2.4s forwards;
+      pointer-events: none;
+    }
+    
+    @keyframes fadeOut {
+      to { opacity: 0; visibility: hidden; }
+    }
+    
+    /* Main Logo Splash */
+    #entrance-logo {
+      width: 200px;
+      height: 200px;
+      object-fit: contain;
+      filter: drop-shadow(0 0 60px rgba(139,92,246,1));
+      animation: logoSplash 1s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+      z-index: 10;
+    }
+    
+    @keyframes logoSplash {
+      0% {
+        transform: scale(0.3) translateY(-50vh);
+        opacity: 0;
+        filter: drop-shadow(0 0 20px rgba(139,92,246,0.5));
+      }
+      50% {
+        transform: scale(1.2) translateY(0);
+        opacity: 1;
+        filter: drop-shadow(0 0 80px rgba(255,0,110,1));
+      }
+      70% {
+        transform: scale(0.95) translateY(0);
+        filter: drop-shadow(0 0 100px rgba(0,212,255,1));
+      }
+      100% {
+        transform: scale(1) translateY(0);
+        opacity: 1;
+        filter: drop-shadow(0 0 60px rgba(139,92,246,1));
+      }
+    }
+    
+    /* Rain Droplets Container */
+    #rain-container {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      pointer-events: none;
+    }
+    
+    /* Individual Droplets */
+    .rain-drop {
+      position: absolute;
+      width: 40px;
+      height: 40px;
+      background: radial-gradient(circle, rgba(139,92,246,0.8) 0%, transparent 70%);
+      border-radius: 50%;
+      opacity: 0;
+      animation: dropFall 1.5s ease-in forwards;
+    }
+    
+    @keyframes dropFall {
+      0% {
+        opacity: 0;
+        transform: translateY(-100px) scale(0.5);
+      }
+      10% {
+        opacity: 1;
+      }
+      90% {
+        opacity: 0.8;
+      }
+      100% {
+        opacity: 0;
+        transform: translateY(100vh) scale(1.2);
+      }
+    }
+    
+    /* Splash Ripples */
+    #splash-ripples {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 300px;
+      height: 300px;
+    }
+    
+    .ripple {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 100%;
+      height: 100%;
+      border: 3px solid rgba(139,92,246,0.6);
+      border-radius: 50%;
+      animation: rippleExpand 1.5s ease-out forwards;
+    }
+    
+    .ripple:nth-child(2) {
+      animation-delay: 0.3s;
+      border-color: rgba(255,0,110,0.6);
+    }
+    
+    .ripple:nth-child(3) {
+      animation-delay: 0.6s;
+      border-color: rgba(0,212,255,0.6);
+    }
+    
+    @keyframes rippleExpand {
+      0% {
+        transform: translate(-50%, -50%) scale(0);
+        opacity: 1;
+      }
+      100% {
+        transform: translate(-50%, -50%) scale(3);
+        opacity: 0;
+      }
+    }
+    
+    /* Shimmer Effect */
+    #shimmer-effect {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 500px;
+      height: 500px;
+      background: radial-gradient(circle, 
+        rgba(139,92,246,0.3) 0%, 
+        rgba(255,0,110,0.2) 50%, 
+        transparent 70%);
+      animation: shimmerPulse 2s ease-in-out infinite;
+      opacity: 0;
+      animation: shimmerFade 2s ease-in-out forwards;
+    }
+    
+    @keyframes shimmerFade {
+      0% { opacity: 0; }
+      30% { opacity: 1; }
+      70% { opacity: 1; }
+      100% { opacity: 0; }
+    }
+    
+    @keyframes shake {
+      0%, 100% { transform: translateX(0); }
+      25% { transform: translateX(-10px); }
+      75% { transform: translateX(10px); }
+    }
+    
+    /* Badge System Styles */
+    .user-badge-container {
+      position: relative;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+    }
+    
+    .rank-badge {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 16px;
+      border-radius: 20px;
+      font-size: 14px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      position: relative;
+      animation: badgePulse 2s ease-in-out infinite;
+    }
+    
+    .rank-badge:hover {
+      transform: translateY(-3px) scale(1.05);
+      box-shadow: 0 8px 25px rgba(0,0,0,0.4);
+    }
+    
+    .rank-badge .badge-icon {
+      font-size: 24px;
+      filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3));
+    }
+    
+    .rank-badge .badge-name {
+      text-shadow: 0 2px 4px rgba(0,0,0,0.2);
+    }
+    
+    /* Bronze Badge */
+    .badge-bronze {
+      background: linear-gradient(135deg, #CD7F32 0%, #A0522D 100%);
+      border: 2px solid #FFD700;
+      box-shadow: 0 4px 15px rgba(205, 127, 50, 0.5);
+    }
+    
+    /* Silver Badge */
+    .badge-silver {
+      background: linear-gradient(135deg, #C0C0C0 0%, #808080 100%);
+      border: 2px solid #E8E8E8;
+      box-shadow: 0 4px 15px rgba(192, 192, 192, 0.5);
+    }
+    
+    /* Gold Badge */
+    .badge-gold {
+      background: linear-gradient(135deg, #FFD700 0%, #FFA500 100%);
+      border: 2px solid #FFFF00;
+      box-shadow: 0 4px 15px rgba(255, 215, 0, 0.6);
+      color: #000;
+    }
+    
+    /* Platinum Badge */
+    .badge-platinum {
+      background: linear-gradient(135deg, #E5E4E2 0%, #B0C4DE 100%);
+      border: 2px solid #F0F8FF;
+      box-shadow: 0 4px 15px rgba(229, 228, 226, 0.6);
+      color: #1a0b2e;
+    }
+    
+    /* Diamond Badge */
+    .badge-diamond {
+      background: linear-gradient(135deg, #b9f2ff 0%, #00d4ff 50%, #8b5cf6 100%);
+      border: 2px solid #fff;
+      box-shadow: 0 4px 25px rgba(0, 212, 255, 0.8);
+      animation: diamondShine 3s ease-in-out infinite;
+    }
+    
+    @keyframes badgePulse {
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(1.02); }
+    }
+    
+    @keyframes diamondShine {
+      0%, 100% { box-shadow: 0 4px 25px rgba(0, 212, 255, 0.8); }
+      50% { box-shadow: 0 8px 35px rgba(139, 92, 246, 1); }
+    }
+    
+    /* Info Button */
+    .badge-info-btn {
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      background: rgba(139, 92, 246, 0.3);
+      border: 2px solid #8b5cf6;
+      color: #fff;
+      font-size: 12px;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+    
+    .badge-info-btn:hover {
+      background: #8b5cf6;
+      transform: scale(1.2);
+    }
+    
+    /* Badge Tooltip */
+    .badge-tooltip {
+      position: absolute;
+      top: calc(100% + 10px);
+      left: 50%;
+      transform: translateX(-50%);
+      background: linear-gradient(135deg, #1a0b2e 0%, #0a0e27 100%);
+      border: 2px solid #8b5cf6;
+      border-radius: 16px;
+      padding: 20px;
+      min-width: 320px;
+      box-shadow: 0 15px 40px rgba(0,0,0,0.6);
+      z-index: 1000;
+      opacity: 0;
+      visibility: hidden;
+      transition: all 0.3s ease;
+      pointer-events: none;
+    }
+    
+    .badge-info-btn:hover + .badge-tooltip,
+    .badge-tooltip:hover {
+      opacity: 1;
+      visibility: visible;
+      pointer-events: all;
+    }
+    
+    .badge-tooltip::before {
+      content: '';
+      position: absolute;
+      top: -10px;
+      left: 50%;
+      transform: translateX(-50%);
+      border-left: 10px solid transparent;
+      border-right: 10px solid transparent;
+      border-bottom: 10px solid #8b5cf6;
+    }
+    
+    .badge-tooltip h4 {
+      margin: 0 0 12px 0;
+      font-size: 18px;
+      background: linear-gradient(135deg, #ff006e 0%, #8b5cf6 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    
+    .badge-criteria {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    
+    .criteria-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 8px 12px;
+      background: rgba(255,255,255,0.05);
+      border-radius: 8px;
+      border-left: 3px solid;
+      transition: all 0.2s ease;
+    }
+    
+    .criteria-item:hover {
+      background: rgba(255,255,255,0.1);
+      transform: translateX(5px);
+    }
+    
+    .criteria-item.bronze { border-color: #CD7F32; }
+    .criteria-item.silver { border-color: #C0C0C0; }
+    .criteria-item.gold { border-color: #FFD700; }
+    .criteria-item.platinum { border-color: #E5E4E2; }
+    .criteria-item.diamond { border-color: #00d4ff; }
+    
+    .criteria-icon {
+      font-size: 20px;
+    }
+    
+    .criteria-text {
+      flex: 1;
+      font-size: 13px;
+      color: #e2e8f0;
+    }
+    
+    .criteria-amount {
+      font-weight: 700;
+      color: #fff;
+      font-size: 14px;
+    }
+    
+    /* Hide dashboard content initially */
+    body > *:not(#dashboard-entrance) {
+      opacity: 0;
+      animation: contentFadeIn 0.8s ease 2s forwards;
+    }
+    
+    @keyframes contentFadeIn {
+      to { opacity: 1; }
+    }
+  </style>
+</head>
+<body>
+  <!-- Dashboard Entrance Animation -->
+  <div id="dashboard-entrance">
+    <!-- Rain Container -->
+    <div id="rain-container"></div>
+    
+    <!-- Shimmer Background -->
+    <div id="shimmer-effect"></div>
+    
+    <!-- Splash Ripples -->
+    <div id="splash-ripples">
+      <div class="ripple"></div>
+      <div class="ripple"></div>
+      <div class="ripple"></div>
+    </div>
+    
+    <!-- Main Logo -->
+    <img src="/static/logo.png" alt="ImpactEcho" id="entrance-logo">
+  </div>
+  <!-- Header -->
+  <header class="topbar">
+    <div class="brand">
+      <img src="/static/logo.png" alt="ImpactEcho" class="logo-img" style="width:50px;height:50px;object-fit:contain;margin-right:12px;"><span class="brand-name">ImpactEcho</span>
+    </div>
+    <nav class="nav-right">
+      <span class="status-dot"></span><span class="status-text">Live Impact Tracking</span>
+      <button id="logoutBtn" class="btn-link">Logout</button>
+    </nav>
+  </header>
+
+  <!-- Main Dashboard -->
+  <main class="container">
+    <!-- Hero Section -->
+    <section class="hero card hero-gradient">
+      <div class="hero-left">
+        <h1>Welcome back,</h1>
+        <div style="display:flex;align-items:center;gap:16px;margin-bottom:16px;">
+          <h2 id="username-banner" style="margin:0;">Manaswi G</h2>
+          <div id="userBadge" class="user-badge-container">
+            <!-- Badge will be inserted here -->
+          </div>
+        </div>
+        <p class="muted">Continue your impact journey — track donations, fund causes you care about, and see the ripple effect of your generosity.</p>
+        <div class="hero-badges">
+          <span class="badge">Global Impact</span>
+          <span class="badge">Secure & Transparent</span>
+          <span class="badge">Real-time Tracking</span>
+        </div>
+      </div>
+      <aside class="hero-right card small-panel">
+        <h3>Welcome to ImpactEcho</h3>
+        <input id="usernameInput" class="input" value="Manaswi G" />
+        <p class="muted small">Welcome, <strong id="welcomeInline">Manaswi G</strong>! Ready to make an impact?</p>
+      </aside>
+    </section>
+
+    <!-- Stats Cards -->
+    <section class="stats-row">
+      <div class="stat card">
+        <div class="stat-icon">💰</div>
+        <div>
+          <div class="stat-title">Total Impact</div>
+          <div class="stat-value" id="totalImpact">₹0</div>
+        </div>
+      </div>
+      <div class="stat card">
+        <div class="stat-icon">🎯</div>
+        <div>
+          <div class="stat-title">Causes Supported</div>
+          <div class="stat-value" id="causesSupported">0</div>
+        </div>
+      </div>
+      <div class="stat card">
+        <div class="stat-icon">❤️</div>
+        <div>
+          <div class="stat-title">Donations Made</div>
+          <div class="stat-value" id="donationsMade">0</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Two Column Section -->
+    <section class="two-col">
+      <div class="card big" id="recentImpact">
+        <h3>Recent Impact</h3>
+        <ul id="recentList" class="recent-list">
+          <li class="muted">No donations yet — be the first!</li>
+        </ul>
+      </div>
+      <div class="card big" id="yourImpact">
+        <h3>Your Impact</h3>
+        <div class="lives-impacted">
+          <div class="big-number" id="livesImpacted">0</div>
+          <div class="muted">Lives Impacted</div>
+        </div>
+        <div class="progress-row">
+          <div class="progress-label">Impact Progress</div>
+          <div class="progress-wrap">
+            <div class="progress-bar" id="impactProgressBar" style="width:0%"></div>
+          </div>
+          <div class="progress-percent" id="impactPercent">0%</div>
+        </div>
+        <p class="muted tiny">Every ₹25 helps one person in need</p>
+      </div>
+    </section>
+
+    <!-- Title -->
+    <section class="section-title">
+      <h2>Support Meaningful Causes</h2>
+      <p class="muted">Choose from verified causes and make a direct impact. Every donation creates a ripple of positive change.</p>
+    </section>
+
+    <!-- Causes Grid -->
+    <section class="causes-grid" id="causesGrid"></section>
+
+    <!-- Footer -->
+    <footer class="footer">
+      <div class="footer-inner">
+        <div class="brand-mini"><img src="/static/logo.png" alt="ImpactEcho" style="width:40px;height:40px;object-fit:contain;vertical-align:middle;margin-right:10px;"> <strong>ImpactEcho</strong></div>
+        <div class="muted">© 2025 ImpactEcho · Amplifying generosity worldwide</div>
+      </div>
+    </footer>
+
+    <!-- Transaction History Section -->
+    <section class="card" id="transaction-history" style="margin-top:30px;">
+      <h2 style="margin-bottom:20px;">📜 Transaction History</h2>
+      <div id="transactionList">
+        <p class="muted">No transactions yet</p>
+      </div>
+    </section>
+  </main>
+
+  <!-- Funding Confirmation Modal -->
+  <div id="fundingModal" class="modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2>Confirm Donation</h2>
+        <span class="modal-close" onclick="closeFundingModal()">&times;</span>
+      </div>
+      <div class="modal-body">
+        <div class="donation-summary">
+          <div class="summary-logo">
+            <img src="/static/logo.png" alt="ImpactEcho" style="width:140px;height:140px;object-fit:contain;">
+            <h3 style="margin-top:10px;">ImpactEcho</h3>
+          </div>
+          <div class="summary-details">
+            <div class="summary-row">
+              <span class="summary-label">Cause:</span>
+              <span id="modalCauseName" class="summary-value"></span>
+            </div>
+            <div class="summary-row">
+              <span class="summary-label">Amount:</span>
+              <span id="modalAmount" class="summary-value" style="color:var(--neon-green);font-weight:700;font-size:24px;"></span>
+            </div>
+            <div class="summary-row">
+              <span class="summary-label">Your Wallet:</span>
+              <span id="modalWallet" class="summary-value small"></span>
+            </div>
+            <div class="summary-row">
+              <span class="summary-label">Impact:</span>
+              <span id="modalImpact" class="summary-value"></span>
+            </div>
+            <div class="summary-row" style="border-top:1px solid rgba(139,92,246,0.3);margin-top:10px;padding-top:10px;">
+              <span class="summary-label">Goal:</span>
+              <span id="modalGoal" class="summary-value" style="color:#94a3b8;"></span>
+            </div>
+            <div class="summary-row">
+              <span class="summary-label">Already Raised:</span>
+              <span id="modalRaised" class="summary-value" style="color:#00ff87;"></span>
+            </div>
+            <div class="summary-row">
+              <span class="summary-label">Remaining Needed:</span>
+              <span id="modalRemaining" class="summary-value" style="color:#ff006e;font-weight:700;"></span>
+            </div>
+          </div>
+          <label class="amount-input-label">Enter Amount (₹):</label>
+          <input type="number" id="donationAmount" class="amount-input" placeholder="Enter amount" min="1">
+          <div id="donationError" style="display:none;color:#ff006e;font-size:14px;font-weight:600;margin-top:8px;text-align:center;animation:shake 0.3s;">
+            ⚠️ Amount exceeds remaining limit!
+          </div>
+          <div class="checkbox-container-modal">
+            <input type="checkbox" id="confirmCheckbox">
+            <label for="confirmCheckbox">I confirm this donation and understand it will be processed through my MetaMask wallet.</label>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button onclick="closeFundingModal()" class="btn-cancel">Cancel</button>
+        <button onclick="confirmDonation()" class="btn-confirm" id="confirmBtn" disabled>Confirm Transaction</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Edit Profile Modal -->
+  <div id="editProfileModal" class="modal">
+    <div class="modal-content" style="max-width: 500px;">
+      <div class="modal-header">
+        <div style="text-align:center;width:100%;">
+          <img src="{{ url_for('static', filename='logo.png') }}" alt="ImpactEcho" style="width:80px;height:80px;object-fit:contain;margin-bottom:10px;">
+          <h2>Edit Profile</h2>
+        </div>
+        <span class="modal-close" onclick="closeEditProfileModal()">&times;</span>
+      </div>
+      
+      <div class="modal-body">
+        <div style="margin-bottom:20px;">
+          <label style="display:block;color:#e2e8f0;font-size:14px;font-weight:600;margin-bottom:8px;">Your Name <span style="color:#ff006e;">*</span></label>
+          <input type="text" id="editProfileName" placeholder="e.g., John Doe" style="width:100%;padding:14px 18px;background:rgba(255,255,255,0.05);border:2px solid rgba(139, 92, 246, 0.3);border-radius:12px;color:#fff;font-size:15px;">
+        </div>
+        
+        <div style="margin-bottom:20px;">
+          <label style="display:block;color:#e2e8f0;font-size:14px;font-weight:600;margin-bottom:8px;">Email <span style="color:#94a3b8;font-size:12px;">(Optional)</span></label>
+          <input type="email" id="editProfileEmail" placeholder="e.g., john@example.com" style="width:100%;padding:14px 18px;background:rgba(255,255,255,0.05);border:2px solid rgba(139, 92, 246, 0.3);border-radius:12px;color:#fff;font-size:15px;">
+        </div>
+        
+        <div style="background:rgba(139, 92, 246, 0.1);border:1px solid rgba(139, 92, 246, 0.3);border-radius:12px;padding:12px;margin-bottom:20px;">
+          <p style="margin:0;font-size:12px;color:#94a3b8;line-height:1.5;">
+            <strong style="color:#8b5cf6;">🔒 Privacy:</strong> Your information is stored locally and never sent to servers.
+          </p>
+        </div>
+      </div>
+      
+      <div class="modal-footer">
+        <button class="btn-cancel" onclick="closeEditProfileModal()">Cancel</button>
+        <button class="btn-confirm" onclick="updateProfile()">Save Changes</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Blockchain Integration -->
+  <script src="{{ url_for('static', filename='blockchain.js') }}"></script>
+  <!-- Chatbot JS -->
+  <script src="{{ url_for('static', filename='chatbot.js') }}"></script>
+  <!-- Dashboard JS -->
+  <script src="{{ url_for('static', filename='script.js') }}"></script>
+  
+  <script>
+    // Create rain droplets effect
+    (function() {
+      const rainContainer = document.getElementById('rain-container');
+      const dropletCount = 30; // Number of droplets
+      
+      for (let i = 0; i < dropletCount; i++) {
+        const droplet = document.createElement('div');
+        droplet.className = 'rain-drop';
+        
+        // Random horizontal position
+        droplet.style.left = Math.random() * 100 + '%';
+        
+        // Random delay for staggered effect
+        droplet.style.animationDelay = (Math.random() * 1.5) + 's';
+        
+        // Random size variation
+        const size = 30 + Math.random() * 30;
+        droplet.style.width = size + 'px';
+        droplet.style.height = size + 'px';
+        
+        // Random color variation (purple, pink, blue)
+        const colors = [
+          'radial-gradient(circle, rgba(139,92,246,0.8) 0%, transparent 70%)',
+          'radial-gradient(circle, rgba(255,0,110,0.7) 0%, transparent 70%)',
+          'radial-gradient(circle, rgba(0,212,255,0.7) 0%, transparent 70%)'
+        ];
+        droplet.style.background = colors[Math.floor(Math.random() * colors.length)];
+        
+        rainContainer.appendChild(droplet);
+      }
+      
+      // Remove entrance animation after completion
+      setTimeout(() => {
+        const entrance = document.getElementById('dashboard-entrance');
+        if (entrance && entrance.parentNode) {
+          entrance.parentNode.removeChild(entrance);
+        }
+      }, 3000);
+    })();
+  </script>
+</body>
+</html>
