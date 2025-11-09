@@ -143,4 +143,9 @@ ImpactEcho/
 Built with urgency, creativity, and sleepless enthusiasm for our hackathon.
 Focused on solving a real-world problem with **technology that builds trust**.
 
+## Contributors
 
+- **Shikshith V** — AI Systems & AI Verification  
+- **Manaswi Guntupalli** — Blockchain Integration  
+- **Aditya Singhal** — Frontend Development  
+- **Samhitha Sudarshan** — Backend Development
